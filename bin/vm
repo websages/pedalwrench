@@ -1,0 +1,43 @@
+#!/bin/bash
+
+# gem list | grep knife-vsphere || gem install knife vshere
+
+# ~/.chef/knife.rb
+# knife[:vsphere_host] = "sol"
+# knife[:vsphere_user] = "Administrator"
+# knife[:vsphere_pass] = "<the password>"
+# knife[:vsphere_dc] = "Bikeshed"
+# knife[:vsphere_insecure] = true
+
+host="$1"; shift
+action="$1"
+if [ -z  "${host}" ]; then
+    echo "Host: [$host] not found."
+    knife vsphere vm list
+    exit 0
+fi
+
+fqdn=$(knife vsphere vm list | grep "$host" | awk '{print $NF}')
+if [ -z  "${fqdn}" ]; then
+    echo "Host: [$host] not found."
+    knife vsphere vm list
+    exit 0
+fi
+
+if [ -z "${action}" ];then
+    knife vsphere vm ${fqdn} state
+    exit 0
+fi
+
+case $action in
+    "off")
+        knife vsphere vm state ${fqdn} -s off
+    ;;
+    "on")
+        knife vsphere vm state ${fqdn} -s on
+    ;;
+    "reboot"|"reset"|"bounce")
+        knife vsphere vm state ${fqdn} -s off
+        knife vsphere vm state ${fqdn} -s on
+    ;;
+esac
