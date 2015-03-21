@@ -1,6 +1,7 @@
 #!/bin/bash
 hostname="$1"; shift
 action="$1"; shift
+tftpboot_server='euler'
 
 help(){
   echo "Usage: $0 <hostname> {install|localboot|local|status}"
@@ -26,14 +27,14 @@ fi
 case $action in
     "install")
         echo "linking ${HEX_IP} to install_${hostname}"
-        ssh root@euler "( cd /tftpboot/pxelinux.cfg; rm ${HEX_IP}; ln -s ../pxelinux.menus/install_${hostname} ${HEX_IP} )"
+        ssh root@${tftpboot_server} "( cd /tftpboot/pxelinux.cfg; rm ${HEX_IP}; ln -s ../pxelinux.menus/install_${hostname} ${HEX_IP} )"
     ;;
     "localboot"|"local")
         echo "linking ${HEX_IP} to localboot"
-        ssh root@euler "( cd /tftpboot/pxelinux.cfg; rm ${HEX_IP}; ln -s ../pxelinux.menus/localboot ${HEX_IP} )"
+        ssh root@${tftpboot_server} "( cd /tftpboot/pxelinux.cfg; rm ${HEX_IP}; ln -s ../pxelinux.menus/localboot ${HEX_IP} )"
     ;;
     "status")
-        ssh root@euler "( cd /tftpboot/pxelinux.cfg; ls -l ${HEX_IP} | awk '{print \$NF}' | sed -e 's/.*\///' )"
+        ssh root@${tftpboot_server} "( cd /tftpboot/pxelinux.cfg; ls -l ${HEX_IP} | awk '{print \$NF}' | sed -e 's/.*\///' )"
     ;;
     *)
         echo "no."
