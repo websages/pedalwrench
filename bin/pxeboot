@@ -1,0 +1,42 @@
+#!/bin/bash
+hostname="$1"; shift
+action="$1"; shift
+
+help(){
+  echo "Usage: $0 <hostname> {install|localboot|local|status}"
+  exit 1;
+}
+
+[ -z "${hostname}" ] && help
+[ -z "${action}" ] && action="status"
+
+echo "${action}" | egrep -q "(install|localboot|local|status)"
+EXIT=$?
+[ ${EXIT} -ne 0 ] && help
+[ -z "${action}" ] && help
+
+IP_ADDR=$(dig +short $hostname)
+HEX_IP=$(printf '%02X' $(echo ${IP_ADDR//./ }); echo)
+
+if [ -z ${HEX_IP} ]; then
+    echo "unable to determine the Hexidecimal IP"
+    exit 2
+fi
+
+case $action in
+    "install")
+        echo "linking ${HEX_IP} to install_${hostname}"
+        ssh root@euler "( cd /tftpboot/pxelinux.cfg; rm ${HEX_IP}; ln -s ../pxelinux.menus/install_${hostname} ${HEX_IP} )"
+    ;;
+    "localboot"|"local")
+        echo "linking ${HEX_IP} to localboot"
+        ssh root@euler "( cd /tftpboot/pxelinux.cfg; rm ${HEX_IP}; ln -s ../pxelinux.menus/localboot ${HEX_IP} )"
+    ;;
+    "status")
+        ssh root@euler "( cd /tftpboot/pxelinux.cfg; ls -l ${HEX_IP} | awk '{print \$NF}' | sed -e 's/.*\///' )"
+    ;;
+    *)
+        echo "no."
+        exit 3
+    ;;
+esac

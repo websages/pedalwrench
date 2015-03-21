@@ -1,0 +1,49 @@
+#!/bin/bash
+FQDN=$1
+clear
+echo ${FQDN}
+IP=$(dig +short  ${FQDN})
+if [ -z "${IP}" ] ;then
+    echo "${FQDN} not in DNS. Aborting."
+    exit 0
+fi
+
+# Wait for down...
+COUNT=0
+while [ $COUNT -lt 3 ]; do
+    ping -i2 -c1 ${FQDN} > /dev/null 2>&1
+    EXIT=$?
+    if [ ${EXIT} -eq 0 ]; then
+        COUNT=0
+        echo -n '#'
+    else
+        COUNT=$(expr $COUNT + 1)
+        echo -n '_'
+    fi
+    sleep 3;
+done
+
+# Wait for up...
+COUNT=0
+while [ $COUNT -lt 5 ]; do
+    ping -i2 -c1 ${FQDN} > /dev/null 2>&1
+    EXIT=$?
+    if [ ${EXIT} -eq 0 ]; then
+        echo -n '#'
+        COUNT=$(expr $COUNT + 1)
+    else
+        COUNT=0
+        echo -n '_'
+    fi
+    sleep 3;
+done
+echo
+
+key=""
+echo -n "Waiting for ssh..."
+while [ -z "${key}" ] ; do
+    key=$(ssh-keyscan -T5 ${FQDN} 2>/dev/null)
+    echo -n  "."
+    sleep 3
+done
+echo
